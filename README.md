@@ -1,4 +1,4 @@
-# Flarum Progressive Web App
+# Flarum Progressive Web App!!!!
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg) [![Latest Stable Version](https://img.shields.io/packagist/v/askvortsov/flarum-pwa.svg)](https://packagist.org/packages/askvortsov/flarum-pwa)
 
