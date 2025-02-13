@@ -1,53 +1,20 @@
 <?php
 
-/*
- * This file is part of askvortsov/flarum-pwa
- *
- *  Copyright (c) 2021 Alexander Skvortsov.
- *
- *  For detailed copyright and license information, please view the
- *  LICENSE file that was distributed with this source code.
- */
-
 namespace Askvortsov\FlarumPWA\Api\Controller;
 
 use Askvortsov\FlarumPWA\Api\Serializer\FirebasePushSubscriptionSerializer;
 use Askvortsov\FlarumPWA\FirebasePushSubscription;
-use Flarum\Api\Controller\AbstractCreateController;
 use Flarum\Http\RequestUtil;
-use Flarum\User\Exception\NotAuthenticatedException;
-use Flarum\User\Exception\PermissionDeniedException;
 use Illuminate\Support\Arr;
 use Psr\Http\Message\ServerRequestInterface;
-use Tobscure\JsonApi\Document;
-use Tobscure\JsonApi\Exception\InvalidParameterException;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
- */
-class AddFirebasePushSubscriptionController extends AbstractCreateController
+class AddFirebasePushSubscriptionController implements RequestHandlerInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public $serializer = FirebasePushSubscriptionSerializer::class;
 
-    /**
-     * {@inheritdoc}
-     */
-    public $include = [
-        'user',
-    ];
-
-    /**
-     * {@inheritdoc}
-     * @throws NotAuthenticatedException
-     * @throws InvalidParameterException|PermissionDeniedException
-     */
-    protected function data(ServerRequestInterface $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
         $actor->assertRegistered();

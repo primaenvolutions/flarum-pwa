@@ -1,59 +1,34 @@
 <?php
 
-/*
- * This file is part of askvortsov/flarum-pwa
- *
- *  Copyright (c) 2021 Alexander Skvortsov.
- *
- *  For detailed copyright and license information, please view the
- *  LICENSE file that was distributed with this source code.
- */
-
 namespace Askvortsov\FlarumPWA\Api\Controller;
 
 use Askvortsov\FlarumPWA\Api\Serializer\PWASettingsSerializer;
 use Askvortsov\FlarumPWA\PWATrait;
 use Askvortsov\FlarumPWA\Util;
-use Flarum\Api\Controller\AbstractShowController;
-use Flarum\Http\RequestUtil;
 use Flarum\Http\UrlGenerator;
+use Flarum\Locale\TranslatorInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Flarum\User\Exception\PermissionDeniedException;
+use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ServerRequestInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
-use Tobscure\JsonApi\Document;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
- */
-class ShowPWASettingsController extends AbstractShowController
+class ShowPWASettingsController implements RequestHandlerInterface
 {
     use PWATrait;
 
-    /**
-     * {@inheritdoc}
-     */
     public $serializer = PWASettingsSerializer::class;
 
     public function __construct(protected SettingsRepositoryInterface $settings, protected TranslatorInterface $translator, protected UrlGenerator $url)
     {
     }
 
-    /**
-     * {@inheritdoc}
-     * @throws PermissionDeniedException
-     */
-    protected function data(ServerRequestInterface $request, Document $document): array
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        RequestUtil::getActor($request)->assertAdmin();
-
         $status_messages = [];
 
         $logo = false;
-
+        
         foreach (Util::$ICON_SIZES as $size) {
             if ($size >= 144 && $this->settings->get("askvortsov-pwa.icon_{$size}_path")) {
                 $logo = true;
@@ -119,10 +94,18 @@ class ShowPWASettingsController extends AbstractShowController
             ];
         }
 
-        return [
-            'manifest' => $this->buildManifest(),
-            'sizes' => Util::$ICON_SIZES,
-            'status_messages' => $status_messages,
+        $data = [
+            'data' => [
+                'attributes' => [
+                    'manifest' => $this->buildManifest(),
+                    'sizes' => Util::$ICON_SIZES,
+                    'status_messages' => $status_messages,
+                ],
+                'id' => 'global',
+                'type' => 'pwa-settings'
+            ]
         ];
+
+        return new JsonResponse($data);
     }
 }
