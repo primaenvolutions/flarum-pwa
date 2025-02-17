@@ -2,23 +2,21 @@
 
 namespace Askvortsov\FlarumPWA\Api\Resource;
 
+use Askvortsov\FlarumPWA\Event\CreateOrUpdateFirebasePushSubscriptionEvent;
+use Askvortsov\FlarumPWA\FirebasePushSubscription;
 use Flarum\Api\Context;
 use Flarum\Api\Endpoint;
-use Flarum\Api\Resource;
+use Flarum\Api\Resource\AbstractDatabaseResource;
 use Flarum\Api\Schema;
-use Flarum\Api\Sort\SortColumn;
-use Askvortsov\FlarumPWA\FirebasePushSubscription;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Tobyz\JsonApiServer\Context as OriginalContext;
 
-/**
- * @extends Resource\AbstractDatabaseResource<FirebasePushSubscription>
- */
-class FirebasePushSubscriptionResource extends Resource\AbstractDatabaseResource
+class FirebasePushSubscriptionResource extends AbstractDatabaseResource
 {
     public function type(): string
     {
-        return 'firebase_push_subscriptions';
+        return 'pwa/firebase-push-subscriptions';
     }
 
     public function model(): string
@@ -28,12 +26,24 @@ class FirebasePushSubscriptionResource extends Resource\AbstractDatabaseResource
 
     public function scope(Builder $query, OriginalContext $context): void
     {
+        /** @phpstan-ignore-next-line */
         $query->whereVisibleTo($context->getActor());
     }
 
     public function endpoints(): array
     {
         return [
+            Endpoint\Endpoint::make('askvortsov-pwa.firebase-subscriptions.create')
+                ->route('POST', '/')
+                ->action(function (Context $context){
+                    $actor = $context->getActor();
+                    $actor->assertRegistered();
+                    $token = Arr::get($context->request->getParsedBody(), 'token', []);
+
+                    $this->events->dispatch(
+                        new CreateOrUpdateFirebasePushSubscriptionEvent($actor, $token)
+                    );
+                })
         ];
     }
 
@@ -42,29 +52,22 @@ class FirebasePushSubscriptionResource extends Resource\AbstractDatabaseResource
         return [
 
             /**
-             * @todo migrate logic from old serializer and controllers to this API Resource.
              * @see https://docs.flarum.org/2.x/extend/api#api-resources
              */
 
             // Example:
-            Schema\Str::make('name')
+            Schema\Str::make('token')
                 ->requiredOnCreate()
-                ->minLength(3)
-                ->maxLength(255)
                 ->writable(),
-
 
             Schema\Relationship\ToOne::make('user')
                 ->includable()
-                // ->inverse('?') // the inverse relationship name if any.
-                ->type('users'), // the serialized type of this relation (type of the relation model's API resource).
+                ->type('users')
         ];
     }
 
     public function sorts(): array
     {
-        return [
-            // SortColumn::make('createdAt'),
-        ];
+        return [];
     }
 }

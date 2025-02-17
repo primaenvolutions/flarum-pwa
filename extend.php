@@ -11,19 +11,19 @@
 
 namespace Askvortsov\FlarumPWA;
 
-use Askvortsov\FlarumPWA\Api\Controller\AddFirebaseConfigController;
-use Askvortsov\FlarumPWA\Api\Controller\AddFirebasePushSubscriptionController;
-use Askvortsov\FlarumPWA\Api\Controller\AddPushSubscriptionController;
-use Askvortsov\FlarumPWA\Api\Controller\DeleteLogoController;
-use Askvortsov\FlarumPWA\Api\Controller\ResetVAPIDKeysController;
-use Askvortsov\FlarumPWA\Api\Controller\ShowPWASettingsController;
 use Askvortsov\FlarumPWA\Api\Controller\UploadLogoController;
 use Askvortsov\FlarumPWA\Api\Resource\FirebasePushSubscriptionResource;
 use Askvortsov\FlarumPWA\Api\Resource\PushSubscriptionResource;
 use Askvortsov\FlarumPWA\Api\Resource\PWASettingsResource;
+use Askvortsov\FlarumPWA\Event\CreateOrUpdateFirebasePushSubscriptionEvent;
+use Askvortsov\FlarumPWA\Event\CreatePushSubscriptionEvent;
+use Askvortsov\FlarumPWA\Event\DeleteLastSubscriptionEvent;
+use Askvortsov\FlarumPWA\Event\SetVapidKeyEvent;
+use Askvortsov\FlarumPWA\Event\UserSubscriptionCounterEvent;
 use Askvortsov\FlarumPWA\Forum\Controller\OfflineController;
 use Askvortsov\FlarumPWA\Forum\Controller\ServiceWorkerController;
 use Askvortsov\FlarumPWA\Forum\Controller\WebManifestController;
+use Askvortsov\FlarumPWA\Listener\CreateOrUpdateFirebasePushSubscriptionListener;
 use Flarum\Extend;
 use Flarum\Frontend\Document;
 use Flarum\Settings\SettingsRepositoryInterface;
@@ -81,16 +81,12 @@ return [
         ->css(__DIR__.'/resources/less/admin.less')
         ->content($metaClosure),
 
-    
+    new Extend\ApiResource(FirebasePushSubscriptionResource::class),
+    new Extend\ApiResource(PushSubscriptionResource::class),
+    new Extend\ApiResource(PWASettingsResource::class),
 
     (new Extend\Routes('api'))
-        ->get('/pwa/settings', 'askvortsov-pwa.settings', ShowPWASettingsController::class)
-        ->post('/pwa/logo/{size}', 'askvortsov-pwa.size_upload', UploadLogoController::class)
-        ->delete('/pwa/logo/{size}', 'askvortsov-pwa.size_delete', DeleteLogoController::class)
-        ->post('/pwa/push', 'askvortsov-pwa.push.create', AddPushSubscriptionController::class)
-        ->post('/pwa/firebase-push-subscriptions', 'askvortsov-pwa.firebase-subscriptions.create', AddFirebasePushSubscriptionController::class)
-        ->post('/pwa/firebase-config', 'askvortsov-pwa.firebase-config.store', AddFirebaseConfigController::class)
-        ->post('/reset_vapid', 'askvortsov-pwa.reset_vapid', ResetVAPIDKeysController::class),
+        ->post('/pwa/logo/{size}', 'askvortsov-pwa.size_upload', UploadLogoController::class),
     
     (new Extend\Routes('forum'))
         ->get('/webmanifest', 'askvortsov-pwa.webmanifest', WebManifestController::class)
@@ -120,8 +116,11 @@ return [
 
     (new Extend\ServiceProvider())
         ->register(FlarumPWAServiceProvider::class),
-
-    new Extend\ApiResource(FirebasePushSubscriptionResource::class),
-    new Extend\ApiResource(PWASettingsResource::class),
-    new Extend\ApiResource(PushSubscriptionResource::class),
+    
+    (new Extend\Event())
+        ->listen(CreateOrUpdateFirebasePushSubscriptionEvent::class, CreateOrUpdateFirebasePushSubscriptionListener::class)
+        ->listen(UserSubscriptionCounterEvent::class, Listener\UserSubscriptionCounterListener::class)
+        ->listen(DeleteLastSubscriptionEvent::class, Listener\DeleteLastSubscriptionListener::class)
+        ->listen(CreatePushSubscriptionEvent::class, Listener\CreatePushSubscriptionListener::class)
+        ->listen(SetVapidKeyEvent::class, Listener\SetVapidKeyListener::class),
 ];

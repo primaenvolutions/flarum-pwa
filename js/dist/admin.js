@@ -13,13 +13,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ PWALogoUploadButton)
 /* harmony export */ });
-/* harmony import */ var flarum_common_components_Button__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! flarum/common/components/Button */ "flarum/common/components/Button");
-/* harmony import */ var flarum_common_components_Button__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(flarum_common_components_Button__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var flarum_admin_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! flarum/admin/components/UploadImageButton */ "flarum/admin/components/UploadImageButton");
-/* harmony import */ var flarum_admin_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(flarum_admin_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var flarum_common_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! flarum/common/components/UploadImageButton */ "flarum/common/components/UploadImageButton");
+/* harmony import */ var flarum_common_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(flarum_common_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_0__);
 
-
-class PWALogoUploadButton extends (flarum_admin_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_1___default()) {
+class PWALogoUploadButton extends (flarum_common_components_UploadImageButton__WEBPACK_IMPORTED_MODULE_0___default()) {
   static initAttrs(attrs) {
     super.initAttrs(attrs);
     attrs.name = `pwa-icon-${attrs.size}x${attrs.size}`;
@@ -29,20 +26,26 @@ class PWALogoUploadButton extends (flarum_admin_components_UploadImageButton__WE
     this.attrs.className = (this.attrs.className || '') + ' Button';
     if (app.data.settings['askvortsov-pwa.icon_' + this.attrs.size + '_path']) {
       this.attrs.onclick = this.remove.bind(this);
-      return m("div", null, m("p", null, m("img", {
-        src: app.forum.attribute(this.attrs.name + 'Url'),
-        alt: ""
-      })), m("p", null, super.view({
-        ...vnode,
-        children: app.translator.trans('core.admin.upload_image.remove_button')
-      })));
+      this.attrs.value = app.data.settings['askvortsov-pwa.icon_' + this.attrs.size + '_path'];
+      this.attrs.url = app.forum.attribute(this.attrs.name + 'Url');
     } else {
       this.attrs.onclick = this.upload.bind(this);
     }
     return super.view({
       ...vnode,
-      children: app.translator.trans('core.admin.upload_image.upload_button')
+      children: app.translator.trans('core.admin.upload_image.upload_buttonx')
     });
+  }
+  remove() {
+    this.loading = true;
+    m.redraw();
+    app.request({
+      method: 'DELETE',
+      url: this.deleteUrl()
+    }).then(this.success.bind(this), this.failure.bind(this));
+  }
+  deleteUrl() {
+    return app.forum.attribute('apiUrl') + '/pwa-settings/logo/' + this.attrs.size;
   }
   resourceUrl() {
     return app.forum.attribute('apiUrl') + '/pwa/logo/' + this.attrs.size;
@@ -92,7 +95,7 @@ class PWAPage extends (flarum_admin_components_ExtensionPage__WEBPACK_IMPORTED_M
     this.sizes = [];
     app.request({
       method: 'GET',
-      url: app.forum.attribute('apiUrl') + '/pwa/settings'
+      url: app.forum.attribute('apiUrl') + '/pwa-settings'
     }).then(response => {
       this.manifest = response['data']['attributes']['manifest'];
       this.sizes = response['data']['attributes']['sizes'];
@@ -222,7 +225,7 @@ class PWAPage extends (flarum_admin_components_ExtensionPage__WEBPACK_IMPORTED_M
     if (confirm(app.translator.trans('askvortsov-pwa.admin.pwa.maintenance.reset_vapid_confirm'))) {
       app.request({
         method: 'POST',
-        url: app.forum.attribute('apiUrl') + '/reset_vapid'
+        url: app.forum.attribute('apiUrl') + '/pwa-settings/reset_vapid'
       }).then(response => {
         app.alerts.show({
           type: 'success'
@@ -288,7 +291,7 @@ class PWAUploadFirebaseConfigForm extends (flarum_common_Component__WEBPACK_IMPO
     body.append('file', event.target.files[0]);
     app.request({
       method: 'POST',
-      url: app.forum.attribute('apiUrl') + '/pwa/firebase-config',
+      url: app.forum.attribute('apiUrl') + '/pwa-settings/firebase-config',
       body: body
     }).then(response => {
       app.alerts.show({
@@ -312,7 +315,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _components_PWAPage__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./components/PWAPage */ "./src/admin/components/PWAPage.js");
 
 app.initializers.add('askvortsov/flarum-pwa', () => {
-  app.extensionData.for('askvortsov-pwa').registerPage(_components_PWAPage__WEBPACK_IMPORTED_MODULE_0__["default"]);
+  app.registry.for('askvortsov-pwa').registerPage(_components_PWAPage__WEBPACK_IMPORTED_MODULE_0__["default"]);
 });
 
 /***/ }),
@@ -325,17 +328,6 @@ app.initializers.add('askvortsov/flarum-pwa', () => {
 
 "use strict";
 module.exports = flarum.reg.get('core', 'admin/components/ExtensionPage');
-
-/***/ }),
-
-/***/ "flarum/admin/components/UploadImageButton":
-/*!*******************************************************************************!*\
-  !*** external "flarum.reg.get('core', 'admin/components/UploadImageButton')" ***!
-  \*******************************************************************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = flarum.reg.get('core', 'admin/components/UploadImageButton');
 
 /***/ }),
 
@@ -380,6 +372,17 @@ module.exports = flarum.reg.get('core', 'common/components/Button');
 
 "use strict";
 module.exports = flarum.reg.get('core', 'common/components/LoadingIndicator');
+
+/***/ }),
+
+/***/ "flarum/common/components/UploadImageButton":
+/*!********************************************************************************!*\
+  !*** external "flarum.reg.get('core', 'common/components/UploadImageButton')" ***!
+  \********************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = flarum.reg.get('core', 'common/components/UploadImageButton');
 
 /***/ })
 

@@ -47,7 +47,7 @@ class FirebasePushSender
             return;
         }
 
-        FirebasePushSubscription::whereIn('user_id', $userIds)->each(function (FirebasePushSubscription $subscription) use ($messaging, $blueprint) {
+        FirebasePushSubscription::query()->whereIn('user_id', $userIds)->each(function (FirebasePushSubscription $subscription) use ($messaging, $blueprint) {
             try {
                 $messaging->send($this->newFirebaseCloudMessage($subscription, $blueprint));
             } catch (AuthenticationError $e) {
