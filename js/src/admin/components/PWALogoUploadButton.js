@@ -13,7 +13,7 @@ export default class PWALogoUploadButton extends UploadImageButton {
 
     if (app.data.settings['askvortsov-pwa.icon_' + this.attrs.size + '_path']) {
       this.attrs.onclick = this.remove.bind(this);
-      this.attrs.value = app.data.settings['askvortsov-pwa.icon_' + this.attrs.size + '_path']
+      this.attrs.value = app.data.settings['askvortsov-pwa.icon_' + this.attrs.size + '_path'];
       this.attrs.url = app.forum.attribute(this.attrs.name + 'Url');
     } else {
       this.attrs.onclick = this.upload.bind(this);
